@@ -1,7 +1,5 @@
 package org.Jxpress;
 
-import org.Jxpress.Controller.Controller;
-import org.Jxpress.MiddleWare.Middleware;
 
 /**
  * Created by Pengfei on 2/3/2017.
@@ -19,7 +17,7 @@ public interface WebServer {
      * @param url entire url
      * @return webserver instance
      */
-    WebServer get(String url);
+    WebServer get(String url, IController ctl);
 
     /**
      * control web server running

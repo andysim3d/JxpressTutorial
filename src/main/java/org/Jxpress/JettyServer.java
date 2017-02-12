@@ -1,6 +1,6 @@
 package org.Jxpress;
 
-import org.Jxpress.Controller.Controller;
+
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
@@ -19,21 +19,31 @@ import java.util.List;
 /**
  * Created by Pengfei on 2/3/2017.
  */
+
 public class JettyServer implements WebServer {
     private Server server;
 
     protected int port = 80;
 
-    List<String> getURL = new ArrayList<String>();
+    protected UrlRouter urlRouter = new UrlRouter();
+
 
     public WebServer listen(int port) {
         this.port = port;
         return null;
     }
 
-    public WebServer get(String url) {
-        getURL.add(url);
-        return this;
+    public WebServer get(String url, IController ctl) {
+        try {
+            urlRouter.addController(url,ctl,"get");
+            return this;
+        }
+        catch (Exception exp){
+            // do nothing
+        }finally {
+            return  this;
+        }
+
     }
 
     public WebServer stop() {
@@ -51,7 +61,7 @@ public class JettyServer implements WebServer {
 
     public WebServer start() {
         server = new Server(this.port);
-        Handler hdlr = new WebServerHandler(getURL);
+        Handler hdlr = new WebServerHandler(urlRouter);
         server.setHandler(hdlr);
         try{
             server.start();
@@ -64,13 +74,16 @@ public class JettyServer implements WebServer {
 
     private static class WebServerHandler extends AbstractHandler {
 
-        private List<String> getURLs;
-        public WebServerHandler(List getURLs){
-            this.getURLs = getURLs;
+        private UrlRouter urlRouter;
+        public WebServerHandler(UrlRouter urlRouter){
+            this.urlRouter = urlRouter;
         }
-        public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
+        public void handle(String s, Request request,
+                           HttpServletRequest httpServletRequest,
+                           HttpServletResponse httpServletResponse)
+                throws IOException, ServletException {
             try{
-                process(s, httpServletRequest, httpServletResponse);
+                process(httpServletRequest, httpServletResponse);
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -78,16 +91,17 @@ public class JettyServer implements WebServer {
         }
 
 
-        private void process(String s, HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-            for (String each : getURLs){
-                if (each.equalsIgnoreCase(s)){
-                    OutputStreamWriter optwriter = new OutputStreamWriter(response.getOutputStream(), "utf-8");
-                    optwriter.write("Hello world!");
-                    response.setStatus(200);
-                    optwriter.flush();
-                }
+        private void process(HttpServletRequest request,
+                             HttpServletResponse response)
+                throws IOException {
+            try {
+                urlRouter.route(request).
+                        execute(request, response);;
             }
+            catch(Exception e){
+
+            }
+
         }
 
 
